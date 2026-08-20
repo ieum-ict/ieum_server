@@ -1,3 +1,3 @@
 package com.ieum.ict.ieum.auth.api;
 
-public record AuthResponse(String accessToken) {}
+public record AuthResponse(String accessToken, String refreshToken) {}
