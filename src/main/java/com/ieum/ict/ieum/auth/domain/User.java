@@ -18,10 +18,14 @@ public class User {
     private String password;
     @Column(nullable = false)
     private String name;
+    private String refreshToken;
 
     public User(String email, String password, String name) {
         this.email = email;
         this.password = password;
         this.name = name;
     }
+
+    public void updateRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
+    public void clearRefreshToken() { this.refreshToken = null; }
 }

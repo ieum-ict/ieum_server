@@ -4,10 +4,6 @@ import com.ieum.ict.ieum.auth.api.AuthRequest;
 import com.ieum.ict.ieum.auth.api.AuthResponse;
 import com.ieum.ict.ieum.auth.domain.User;
 import com.ieum.ict.ieum.auth.repository.UserRepository;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -20,7 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    @Value("${jwt.secret:ieum-local-secret-key-must-be-at-least-32-bytes}") private String secret;
+    private final com.ieum.ict.ieum.auth.security.JwtTokenProvider jwtTokenProvider;
 
     public void signup(AuthRequest.Signup request) {
         if (userRepository.existsByEmail(request.email())) {
@@ -35,10 +31,35 @@ public class AuthService {
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다.");
         }
-        var now = new Date();
-        String token = Jwts.builder().subject(String.valueOf(user.getId())).claim("email", user.getEmail())
-                .issuedAt(now).expiration(new Date(now.getTime() + 3600000))
-                .signWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8))).compact();
-        return new AuthResponse(token);
+        String accessToken = jwtTokenProvider.create(user.getEmail(), "access", 3600000);
+        String refreshToken = jwtTokenProvider.create(user.getEmail(), "refresh", 1209600000);
+        user.updateRefreshToken(refreshToken);
+        userRepository.save(user);
+        return new AuthResponse(accessToken, refreshToken);
+    }
+
+    public AuthResponse refresh(AuthRequest.Refresh request) {
+        if (!jwtTokenProvider.isValid(request.refreshToken())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "유효하지 않은 Refresh Token입니다.");
+        }
+        var claims = jwtTokenProvider.parse(request.refreshToken());
+        if (!"refresh".equals(claims.get("type", String.class))) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh Token이 아닙니다.");
+        }
+        User user = userRepository.findByEmail(claims.getSubject())
+                .filter(candidate -> request.refreshToken().equals(candidate.getRefreshToken()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh Token이 일치하지 않습니다."));
+        String accessToken = jwtTokenProvider.create(user.getEmail(), "access", 3600000);
+        return new AuthResponse(accessToken, request.refreshToken());
+    }
+
+    public void logout(AuthRequest.Logout request) {
+        if (!jwtTokenProvider.isValid(request.refreshToken())) {
+            return;
+        }
+        userRepository.findByEmail(jwtTokenProvider.parse(request.refreshToken()).getSubject())
+                .ifPresent(user -> { if (request.refreshToken().equals(user.getRefreshToken())) {
+                    user.clearRefreshToken(); userRepository.save(user);
+                }});
     }
 }
