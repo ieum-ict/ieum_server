@@ -6,6 +6,12 @@ import com.ieum.ict.ieum.transfer.api.TransferRequest;
 import com.ieum.ict.ieum.transfer.api.TransferResponse;
 import com.ieum.ict.ieum.transfer.domain.Transfer;
 import com.ieum.ict.ieum.transfer.domain.TransferStatus;
+import com.ieum.ict.ieum.transfer.domain.TransferStatusHistory;
+import com.ieum.ict.ieum.transfer.api.TransferHistoryResponse;
+import com.ieum.ict.ieum.transfer.repository.TransferStatusHistoryRepository;
+import com.ieum.ict.ieum.transfer.domain.TransferRecord;
+import com.ieum.ict.ieum.transfer.api.TransferRecordResponse;
+import com.ieum.ict.ieum.transfer.repository.TransferRecordRepository;
 import com.ieum.ict.ieum.transfer.repository.TransferRepository;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
@@ -19,13 +25,17 @@ import org.springframework.web.server.ResponseStatusException;
 public class TransferService {
     private final UserRepository userRepository;
     private final TransferRepository transferRepository;
+    private final TransferStatusHistoryRepository historyRepository;
+    private final TransferRecordRepository recordRepository;
 
     @Transactional
     public TransferResponse create(String email, TransferRequest.Create request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."));
-        return TransferResponse.from(transferRepository.save(new Transfer(user, request.patientName(), request.patientAge(),
-                request.symptom(), request.departureAddress())));
+        Transfer transfer = transferRepository.save(new Transfer(user, request.patientName(), request.patientAge(),
+                request.symptom(), request.departureAddress()));
+        historyRepository.save(new TransferStatusHistory(transfer, TransferStatus.REQUESTED));
+        return TransferResponse.from(transfer);
     }
 
     @Transactional(readOnly = true)
@@ -57,6 +67,7 @@ public class TransferService {
     public void cancel(String email, Long transferId) {
         Transfer transfer = getOwnedTransfer(email, transferId);
         transfer.cancel();
+        historyRepository.save(new TransferStatusHistory(transfer, TransferStatus.CANCELLED));
     }
 
     @Transactional(readOnly = true)
@@ -72,6 +83,7 @@ public class TransferService {
         } catch (IllegalStateException exception) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, exception.getMessage());
         }
+        historyRepository.save(new TransferStatusHistory(transfer, status));
         return TransferResponse.from(transfer);
     }
 
@@ -97,7 +109,28 @@ public class TransferService {
         } catch (IllegalStateException exception) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, exception.getMessage());
         }
+        historyRepository.save(new TransferStatusHistory(transfer, transfer.getStatus()));
         return TransferResponse.from(transfer);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TransferHistoryResponse> findHistory(String email, Long transferId) {
+        Transfer transfer = getOwnedTransfer(email, transferId);
+        return historyRepository.findAllByTransferOrderByChangedAtAsc(transfer).stream()
+                .map(TransferHistoryResponse::from).toList();
+    }
+
+    @Transactional
+    public TransferRecordResponse saveRecord(String email, Long transferId, String type, String content) {
+        Transfer transfer = getOwnedTransfer(email, transferId);
+        return TransferRecordResponse.from(recordRepository.save(new TransferRecord(transfer, type, content)));
+    }
+
+    @Transactional(readOnly = true)
+    public List<TransferRecordResponse> findRecords(String email, Long transferId, String type) {
+        Transfer transfer = getOwnedTransfer(email, transferId);
+        return recordRepository.findAllByTransferAndTypeOrderByCreatedAtDesc(transfer, type).stream()
+                .map(TransferRecordResponse::from).toList();
     }
 
     private Transfer getOwnedTransfer(String email, Long transferId) {

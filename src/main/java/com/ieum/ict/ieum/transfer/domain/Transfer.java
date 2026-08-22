@@ -65,6 +65,11 @@ public class Transfer {
         this.status = status;
     }
 
+    public TransferStatus changeStatus(TransferStatus status) {
+        updateStatus(status);
+        return status;
+    }
+
     public void start() { moveFrom(TransferStatus.REQUESTED, TransferStatus.IN_PROGRESS); }
     public void arrive() { moveFrom(TransferStatus.IN_PROGRESS, TransferStatus.ARRIVED); }
     public void handover() { moveFrom(TransferStatus.ARRIVED, TransferStatus.HANDED_OVER); }
