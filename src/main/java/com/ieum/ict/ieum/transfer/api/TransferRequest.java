@@ -13,4 +13,5 @@ public final class TransferRequest {
     public record Update(@NotBlank String patientName, @NotNull @Min(0) Integer patientAge,
                          @NotBlank @Size(max = 1000) String symptom,
                          @NotBlank String departureAddress) {}
+    public record StatusUpdate(@NotNull com.ieum.ict.ieum.transfer.domain.TransferStatus status) {}
 }

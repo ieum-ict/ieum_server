@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import com.ieum.ict.ieum.transfer.domain.TransferStatus;
 
 @RestController
 @RequestMapping("/transfers")
@@ -38,6 +39,19 @@ public class TransferController {
     public CommonResponse<Void> cancel(@PathVariable Long transferId, Authentication authentication) {
         transferService.cancel(authentication.getName(), transferId);
         return CommonResponse.ok(null);
+    }
+
+    @GetMapping("/{transferId}/status")
+    public CommonResponse<TransferStatus> findStatus(@PathVariable Long transferId,
+                                                       Authentication authentication) {
+        return CommonResponse.ok(transferService.findStatus(authentication.getName(), transferId));
+    }
+
+    @PatchMapping("/{transferId}/status")
+    public CommonResponse<TransferResponse> updateStatus(@PathVariable Long transferId,
+                                                          @Valid @RequestBody TransferRequest.StatusUpdate request,
+                                                          Authentication authentication) {
+        return CommonResponse.ok(transferService.updateStatus(authentication.getName(), transferId, request.status()));
     }
 
     @PostMapping

@@ -5,6 +5,7 @@ import com.ieum.ict.ieum.auth.repository.UserRepository;
 import com.ieum.ict.ieum.transfer.api.TransferRequest;
 import com.ieum.ict.ieum.transfer.api.TransferResponse;
 import com.ieum.ict.ieum.transfer.domain.Transfer;
+import com.ieum.ict.ieum.transfer.domain.TransferStatus;
 import com.ieum.ict.ieum.transfer.repository.TransferRepository;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
@@ -56,6 +57,22 @@ public class TransferService {
     public void cancel(String email, Long transferId) {
         Transfer transfer = getOwnedTransfer(email, transferId);
         transfer.cancel();
+    }
+
+    @Transactional(readOnly = true)
+    public TransferStatus findStatus(String email, Long transferId) {
+        return getOwnedTransfer(email, transferId).getStatus();
+    }
+
+    @Transactional
+    public TransferResponse updateStatus(String email, Long transferId, TransferStatus status) {
+        Transfer transfer = getOwnedTransfer(email, transferId);
+        try {
+            transfer.updateStatus(status);
+        } catch (IllegalStateException exception) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, exception.getMessage());
+        }
+        return TransferResponse.from(transfer);
     }
 
     private Transfer getOwnedTransfer(String email, Long transferId) {

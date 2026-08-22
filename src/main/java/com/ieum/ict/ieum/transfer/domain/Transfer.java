@@ -53,4 +53,15 @@ public class Transfer {
         }
         this.status = TransferStatus.CANCELLED;
     }
+
+    public void updateStatus(TransferStatus status) {
+        if (this.status == TransferStatus.CANCELLED) {
+            throw new IllegalStateException("취소된 이송 요청의 상태는 변경할 수 없습니다.");
+        }
+        if (status == TransferStatus.REQUESTED || status == TransferStatus.CANCELLED) {
+            this.status = status;
+            return;
+        }
+        this.status = status;
+    }
 }
