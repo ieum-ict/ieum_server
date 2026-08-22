@@ -7,6 +7,7 @@ import com.ieum.ict.ieum.transfer.api.TransferResponse;
 import com.ieum.ict.ieum.transfer.domain.Transfer;
 import com.ieum.ict.ieum.transfer.repository.TransferRepository;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,5 +25,20 @@ public class TransferService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."));
         return TransferResponse.from(transferRepository.save(new Transfer(user, request.patientName(), request.patientAge(),
                 request.symptom(), request.departureAddress())));
+    }
+
+    @Transactional(readOnly = true)
+    public List<TransferResponse> findAll(String email) {
+        return transferRepository.findAllByRequesterEmailOrderByCreatedAtDesc(email).stream()
+                .map(TransferResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TransferResponse findById(String email, Long transferId) {
+        Transfer transfer = transferRepository.findById(transferId)
+                .filter(candidate -> candidate.getRequester().getEmail().equals(email))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "이송 요청을 찾을 수 없습니다."));
+        return TransferResponse.from(transfer);
     }
 }
