@@ -30,9 +30,9 @@ public class JwtTokenProvider {
         }
     }
 
-    public String create(String subject, String type, long expirationMillis) {
+    public String create(String subject, String type, String role, long expirationMillis) {
         Date now = new Date();
-        return Jwts.builder().subject(subject).claim("type", type).issuedAt(now)
+        return Jwts.builder().subject(subject).claim("type", type).claim("role", role).issuedAt(now)
                 .expiration(new Date(now.getTime() + expirationMillis))
                 .signWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8))).compact();
     }

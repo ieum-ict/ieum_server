@@ -69,6 +69,107 @@ public class TransferController {
         return CommonResponse.ok(transferService.handover(authentication.getName(), transferId));
     }
 
+    @GetMapping("/{transferId}/history")
+    public CommonResponse<List<TransferHistoryResponse>> history(@PathVariable Long transferId,
+                                                                  Authentication authentication) {
+        return CommonResponse.ok(transferService.findHistory(authentication.getName(), transferId));
+    }
+
+    @PostMapping("/{transferId}/route")
+    public CommonResponse<TransferRecordResponse> route(@PathVariable Long transferId,
+                                                         @Valid @RequestBody TransferRecordRequest request,
+                                                         Authentication authentication) {
+        return CommonResponse.ok(transferService.saveRecord(authentication.getName(), transferId, "ROUTE", request.content()));
+    }
+
+    @PostMapping("/{transferId}/updates")
+    public CommonResponse<TransferRecordResponse> addUpdate(@PathVariable Long transferId,
+                                                              @Valid @RequestBody TransferRecordRequest request,
+                                                              Authentication authentication) {
+        return CommonResponse.ok(transferService.saveRecord(authentication.getName(), transferId, "UPDATE", request.content()));
+    }
+
+    @GetMapping("/{transferId}/updates")
+    public CommonResponse<List<TransferRecordResponse>> updates(@PathVariable Long transferId, Authentication authentication) {
+        return CommonResponse.ok(transferService.findRecords(authentication.getName(), transferId, "UPDATE"));
+    }
+
+    @GetMapping("/{transferId}/resources")
+    public CommonResponse<List<TransferRecordResponse>> resources(@PathVariable Long transferId, Authentication authentication) {
+        return CommonResponse.ok(transferService.findRecords(authentication.getName(), transferId, "RESOURCE"));
+    }
+
+    @PatchMapping("/{transferId}/resources")
+    public CommonResponse<TransferRecordResponse> resource(@PathVariable Long transferId,
+                                                            @Valid @RequestBody TransferRecordRequest request,
+                                                            Authentication authentication) {
+        return CommonResponse.ok(transferService.saveRecord(authentication.getName(), transferId, "RESOURCE", request.content()));
+    }
+
+    @GetMapping("/{transferId}/preparations")
+    public CommonResponse<List<TransferRecordResponse>> preparations(@PathVariable Long transferId, Authentication authentication) {
+        return CommonResponse.ok(transferService.findRecords(authentication.getName(), transferId, "PREPARATION"));
+    }
+
+    @PatchMapping("/{transferId}/preparations")
+    public CommonResponse<TransferRecordResponse> preparation(@PathVariable Long transferId,
+                                                               @Valid @RequestBody TransferRecordRequest request,
+                                                               Authentication authentication) {
+        return CommonResponse.ok(transferService.saveRecord(authentication.getName(), transferId, "PREPARATION", request.content()));
+    }
+
+    @PostMapping("/{transferId}/preparations/alerts")
+    public CommonResponse<TransferRecordResponse> preparationAlert(@PathVariable Long transferId,
+                                                                     @Valid @RequestBody TransferRecordRequest request,
+                                                                     Authentication authentication) {
+        return CommonResponse.ok(transferService.saveRecord(authentication.getName(), transferId, "PREPARATION_ALERT", request.content()));
+    }
+
+    @PatchMapping("/{transferId}/patient")
+    public CommonResponse<TransferRecordResponse> patient(@PathVariable Long transferId,
+                                                           @Valid @RequestBody TransferRecordRequest request,
+                                                           Authentication authentication) {
+        return CommonResponse.ok(transferService.saveRecord(authentication.getName(), transferId, "PATIENT", request.content()));
+    }
+
+    @PostMapping("/{transferId}/patient/apply")
+    public CommonResponse<TransferRecordResponse> applyPatient(@PathVariable Long transferId,
+                                                                @Valid @RequestBody TransferRecordRequest request,
+                                                                Authentication authentication) {
+        return CommonResponse.ok(transferService.saveRecord(authentication.getName(), transferId, "PATIENT_APPLIED", request.content()));
+    }
+
+    @PostMapping("/{transferId}/recommendations")
+    public CommonResponse<TransferRecordResponse> recommendations(@PathVariable Long transferId,
+                                                                   @Valid @RequestBody TransferRecordRequest request,
+                                                                   Authentication authentication) {
+        return CommonResponse.ok(transferService.saveRecord(authentication.getName(), transferId, "RECOMMENDATION", request.content()));
+    }
+
+    @PostMapping("/{transferId}/hospital")
+    public CommonResponse<TransferRecordResponse> selectHospital(@PathVariable Long transferId,
+                                                                  @Valid @RequestBody TransferRecordRequest request,
+                                                                  Authentication authentication) {
+        return CommonResponse.ok(transferService.saveRecord(authentication.getName(), transferId, "HOSPITAL", request.content()));
+    }
+
+    @GetMapping("/{transferId}/hospital")
+    public CommonResponse<List<TransferRecordResponse>> hospital(@PathVariable Long transferId, Authentication authentication) {
+        return CommonResponse.ok(transferService.findRecords(authentication.getName(), transferId, "HOSPITAL"));
+    }
+
+    @GetMapping("/{transferId}/responses")
+    public CommonResponse<List<TransferRecordResponse>> responses(@PathVariable Long transferId, Authentication authentication) {
+        return CommonResponse.ok(transferService.findRecords(authentication.getName(), transferId, "RESPONSE"));
+    }
+
+    @PostMapping("/{transferId}/sync")
+    public CommonResponse<TransferRecordResponse> sync(@PathVariable Long transferId,
+                                                       @Valid @RequestBody TransferRecordRequest request,
+                                                       Authentication authentication) {
+        return CommonResponse.ok(transferService.saveRecord(authentication.getName(), transferId, "SYNC", request.content()));
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CommonResponse<TransferResponse> create(@Valid @RequestBody TransferRequest.Create request,

@@ -25,6 +25,11 @@ public class AuthController {
         return CommonResponse.ok(authService.login(request));
     }
 
+    @PostMapping("/admin/login")
+    public CommonResponse<AuthResponse> adminLogin(@Valid @RequestBody AuthRequest.Login request) {
+        return CommonResponse.ok(authService.adminLogin(request));
+    }
+
     @PostMapping("/refresh")
     public CommonResponse<AuthResponse> refresh(@Valid @RequestBody AuthRequest.Refresh request) {
         return CommonResponse.ok(authService.refresh(request));
