@@ -64,4 +64,15 @@ public class Transfer {
         }
         this.status = status;
     }
+
+    public void start() { moveFrom(TransferStatus.REQUESTED, TransferStatus.IN_PROGRESS); }
+    public void arrive() { moveFrom(TransferStatus.IN_PROGRESS, TransferStatus.ARRIVED); }
+    public void handover() { moveFrom(TransferStatus.ARRIVED, TransferStatus.HANDED_OVER); }
+
+    private void moveFrom(TransferStatus expected, TransferStatus next) {
+        if (this.status != expected) {
+            throw new IllegalStateException("현재 상태에서는 해당 작업을 진행할 수 없습니다.");
+        }
+        this.status = next;
+    }
 }
