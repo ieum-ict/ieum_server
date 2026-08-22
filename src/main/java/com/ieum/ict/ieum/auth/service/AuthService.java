@@ -3,6 +3,7 @@ package com.ieum.ict.ieum.auth.service;
 import com.ieum.ict.ieum.auth.api.AuthRequest;
 import com.ieum.ict.ieum.auth.api.AuthResponse;
 import com.ieum.ict.ieum.auth.domain.User;
+import com.ieum.ict.ieum.auth.domain.UserRole;
 import com.ieum.ict.ieum.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,8 +32,8 @@ public class AuthService {
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다.");
         }
-        String accessToken = jwtTokenProvider.create(user.getEmail(), "access", 3600000);
-        String refreshToken = jwtTokenProvider.create(user.getEmail(), "refresh", 1209600000);
+        String accessToken = jwtTokenProvider.create(user.getEmail(), "access", user.getRole().name(), 3600000);
+        String refreshToken = jwtTokenProvider.create(user.getEmail(), "refresh", user.getRole().name(), 1209600000);
         user.updateRefreshToken(refreshToken);
         userRepository.save(user);
         return new AuthResponse(accessToken, refreshToken);
@@ -49,8 +50,22 @@ public class AuthService {
         User user = userRepository.findByEmail(claims.getSubject())
                 .filter(candidate -> request.refreshToken().equals(candidate.getRefreshToken()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh Token이 일치하지 않습니다."));
-        String accessToken = jwtTokenProvider.create(user.getEmail(), "access", 3600000);
+        String accessToken = jwtTokenProvider.create(user.getEmail(), "access", user.getRole().name(), 3600000);
         return new AuthResponse(accessToken, request.refreshToken());
+    }
+
+    public AuthResponse adminLogin(AuthRequest.Login request) {
+        User user = userRepository.findByEmail(request.email())
+                .filter(candidate -> candidate.getRole() == UserRole.ADMIN)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "관리자 계정 정보가 올바르지 않습니다."));
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "관리자 계정 정보가 올바르지 않습니다.");
+        }
+        String accessToken = jwtTokenProvider.create(user.getEmail(), "access", "ADMIN", 3600000);
+        String refreshToken = jwtTokenProvider.create(user.getEmail(), "refresh", "ADMIN", 1209600000);
+        user.updateRefreshToken(refreshToken);
+        userRepository.save(user);
+        return new AuthResponse(accessToken, refreshToken);
     }
 
     public void logout(AuthRequest.Logout request) {
