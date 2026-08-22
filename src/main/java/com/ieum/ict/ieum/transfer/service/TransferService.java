@@ -41,4 +41,26 @@ public class TransferService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "이송 요청을 찾을 수 없습니다."));
         return TransferResponse.from(transfer);
     }
+
+    @Transactional
+    public TransferResponse update(String email, Long transferId, TransferRequest.Update request) {
+        Transfer transfer = getOwnedTransfer(email, transferId);
+        if (transfer.getStatus() == com.ieum.ict.ieum.transfer.domain.TransferStatus.CANCELLED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "취소된 이송 요청은 수정할 수 없습니다.");
+        }
+        transfer.update(request.patientName(), request.patientAge(), request.symptom(), request.departureAddress());
+        return TransferResponse.from(transfer);
+    }
+
+    @Transactional
+    public void cancel(String email, Long transferId) {
+        Transfer transfer = getOwnedTransfer(email, transferId);
+        transfer.cancel();
+    }
+
+    private Transfer getOwnedTransfer(String email, Long transferId) {
+        return transferRepository.findById(transferId)
+                .filter(candidate -> candidate.getRequester().getEmail().equals(email))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "이송 요청을 찾을 수 없습니다."));
+    }
 }

@@ -26,6 +26,20 @@ public class TransferController {
         return CommonResponse.ok(transferService.findById(authentication.getName(), transferId));
     }
 
+    @PatchMapping("/{transferId}")
+    public CommonResponse<TransferResponse> update(@PathVariable Long transferId,
+                                                    @Valid @RequestBody TransferRequest.Update request,
+                                                    Authentication authentication) {
+        return CommonResponse.ok(transferService.update(authentication.getName(), transferId, request));
+    }
+
+    @DeleteMapping("/{transferId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public CommonResponse<Void> cancel(@PathVariable Long transferId, Authentication authentication) {
+        transferService.cancel(authentication.getName(), transferId);
+        return CommonResponse.ok(null);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CommonResponse<TransferResponse> create(@Valid @RequestBody TransferRequest.Create request,

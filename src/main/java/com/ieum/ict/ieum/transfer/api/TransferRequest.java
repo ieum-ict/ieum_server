@@ -10,4 +10,7 @@ public final class TransferRequest {
     public record Create(@NotBlank String patientName, @NotNull @Min(0) Integer patientAge,
                          @NotBlank @Size(max = 1000) String symptom,
                          @NotBlank String departureAddress) {}
+    public record Update(@NotBlank String patientName, @NotNull @Min(0) Integer patientAge,
+                         @NotBlank @Size(max = 1000) String symptom,
+                         @NotBlank String departureAddress) {}
 }
