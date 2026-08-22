@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,5 +27,30 @@ public class OpenApiConfig {
                                 .scheme("bearer")
                                 .bearerFormat("JWT")))
                 .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH));
+    }
+
+    @Bean
+    public GroupedOpenApi authApi() { return group("auth", "/auth/**"); }
+
+    @Bean
+    public GroupedOpenApi userApi() { return group("user", "/users/**"); }
+
+    @Bean
+    public GroupedOpenApi transferApi() { return group("transfer", "/transfers/**"); }
+
+    @Bean
+    public GroupedOpenApi hospitalApi() { return group("hospital", "/hospitals/**"); }
+
+    @Bean
+    public GroupedOpenApi acceptanceRequestApi() { return group("acceptance-request", "/requests/**"); }
+
+    @Bean
+    public GroupedOpenApi adminApi() { return group("admin", "/admin/**"); }
+
+    @Bean
+    public GroupedOpenApi healthApi() { return group("health", "/api/health"); }
+
+    private GroupedOpenApi group(String group, String path) {
+        return GroupedOpenApi.builder().group(group).pathsToMatch(path).build();
     }
 }

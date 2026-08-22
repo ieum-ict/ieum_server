@@ -15,3 +15,8 @@ spring:
     hibernate:
       ddl-auto: update
     open-in-view: false
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+      schema-locations: classpath:schema-local.sql
