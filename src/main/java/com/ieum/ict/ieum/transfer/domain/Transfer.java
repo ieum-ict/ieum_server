@@ -39,4 +39,18 @@ public class Transfer {
         this.status = TransferStatus.REQUESTED;
         this.createdAt = LocalDateTime.now();
     }
+
+    public void update(String patientName, Integer patientAge, String symptom, String departureAddress) {
+        this.patientName = patientName;
+        this.patientAge = patientAge;
+        this.symptom = symptom;
+        this.departureAddress = departureAddress;
+    }
+
+    public void cancel() {
+        if (this.status == TransferStatus.CANCELLED) {
+            return;
+        }
+        this.status = TransferStatus.CANCELLED;
+    }
 }
