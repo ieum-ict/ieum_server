@@ -75,6 +75,31 @@ public class TransferService {
         return TransferResponse.from(transfer);
     }
 
+    @Transactional
+    public TransferResponse start(String email, Long transferId) {
+        return move(email, transferId, Transfer::start);
+    }
+
+    @Transactional
+    public TransferResponse arrive(String email, Long transferId) {
+        return move(email, transferId, Transfer::arrive);
+    }
+
+    @Transactional
+    public TransferResponse handover(String email, Long transferId) {
+        return move(email, transferId, Transfer::handover);
+    }
+
+    private TransferResponse move(String email, Long transferId, java.util.function.Consumer<Transfer> action) {
+        Transfer transfer = getOwnedTransfer(email, transferId);
+        try {
+            action.accept(transfer);
+        } catch (IllegalStateException exception) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, exception.getMessage());
+        }
+        return TransferResponse.from(transfer);
+    }
+
     private Transfer getOwnedTransfer(String email, Long transferId) {
         return transferRepository.findById(transferId)
                 .filter(candidate -> candidate.getRequester().getEmail().equals(email))

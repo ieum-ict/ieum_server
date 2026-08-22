@@ -54,6 +54,21 @@ public class TransferController {
         return CommonResponse.ok(transferService.updateStatus(authentication.getName(), transferId, request.status()));
     }
 
+    @PostMapping("/{transferId}/start")
+    public CommonResponse<TransferResponse> start(@PathVariable Long transferId, Authentication authentication) {
+        return CommonResponse.ok(transferService.start(authentication.getName(), transferId));
+    }
+
+    @PostMapping("/{transferId}/arrival")
+    public CommonResponse<TransferResponse> arrive(@PathVariable Long transferId, Authentication authentication) {
+        return CommonResponse.ok(transferService.arrive(authentication.getName(), transferId));
+    }
+
+    @PostMapping("/{transferId}/handover")
+    public CommonResponse<TransferResponse> handover(@PathVariable Long transferId, Authentication authentication) {
+        return CommonResponse.ok(transferService.handover(authentication.getName(), transferId));
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CommonResponse<TransferResponse> create(@Valid @RequestBody TransferRequest.Create request,
