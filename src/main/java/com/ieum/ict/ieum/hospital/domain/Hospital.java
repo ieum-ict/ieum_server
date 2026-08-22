@@ -35,4 +35,10 @@ public class Hospital {
         this.resourcesContent = resourcesContent;
         this.resourcesUpdatedAt = LocalDateTime.now();
     }
+
+    public void update(String name, String address, String phone) {
+        this.name = name;
+        this.address = address;
+        this.phone = phone;
+    }
 }
