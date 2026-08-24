@@ -5,6 +5,7 @@ Spring Boot backend for Ieum ICT.
 ## Run
 
 ```bash
+docker compose up -d postgres
 ./gradlew bootRun
 ```
 
