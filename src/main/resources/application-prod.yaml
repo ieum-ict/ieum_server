@@ -8,3 +8,7 @@ spring:
     hibernate:
       ddl-auto: update
     open-in-view: false
+
+app:
+  oauth2:
+    success-redirect-uri: ${OAUTH2_SUCCESS_REDIRECT_URI}
