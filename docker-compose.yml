@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ieum-postgres
+    environment:
+      POSTGRES_DB: ieum
+      POSTGRES_USER: ieum
+      POSTGRES_PASSWORD: ieum
+    ports:
+      - "5432:5432"
+    volumes:
+      - ieum-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  ieum-postgres-data:
