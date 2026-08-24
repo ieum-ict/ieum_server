@@ -34,6 +34,7 @@ jobs:
 
       - name: Validate deployment secrets
         env:
+          INSTANCE_CONNECTION_NAME: ${{ secrets.INSTANCE_CONNECTION_NAME }}
           DB_URL: ${{ secrets.DB_URL }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -41,7 +42,7 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: |
           missing_secrets=()
-          for secret_name in DB_URL DB_USERNAME DB_PASSWORD GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET; do
+          for secret_name in INSTANCE_CONNECTION_NAME DB_URL DB_USERNAME DB_PASSWORD GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET; do
             if [ -z "${!secret_name}" ]; then
               missing_secrets+=("$secret_name")
             fi
@@ -60,6 +61,7 @@ jobs:
           source: .
           flags: >-
             --allow-unauthenticated
+            --add-cloudsql-instances=${{ secrets.INSTANCE_CONNECTION_NAME }}
           env_vars: |
             SPRING_PROFILES_ACTIVE=prod
             DB_URL=${{ secrets.DB_URL }}
