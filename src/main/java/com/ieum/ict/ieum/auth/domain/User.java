@@ -20,6 +20,8 @@ public class User {
     private String name;
     private String refreshToken;
     @Enumerated(EnumType.STRING)
+    private AuthProvider authProvider = AuthProvider.LOCAL;
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role = UserRole.USER;
 
@@ -29,7 +31,13 @@ public class User {
         this.name = name;
     }
 
+    public User(String email, String password, String name, AuthProvider authProvider) {
+        this(email, password, name);
+        this.authProvider = authProvider;
+    }
+
     public void updateRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
     public void clearRefreshToken() { this.refreshToken = null; }
     public void updateRole(UserRole role) { this.role = role; }
+    public boolean isGoogleLogin() { return authProvider == AuthProvider.GOOGLE; }
 }

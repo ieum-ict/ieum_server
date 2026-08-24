@@ -3,6 +3,7 @@ package com.ieum.ict.ieum.auth.service;
 import com.ieum.ict.ieum.auth.api.AuthRequest;
 import com.ieum.ict.ieum.auth.api.AuthResponse;
 import com.ieum.ict.ieum.auth.domain.User;
+import com.ieum.ict.ieum.auth.domain.AuthProvider;
 import com.ieum.ict.ieum.auth.domain.UserRole;
 import com.ieum.ict.ieum.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +42,23 @@ public class AuthService {
         return new AuthResponse(accessToken, refreshToken);
     }
 
+    public AuthResponse loginWithGoogle(String email, String name) {
+        User user = userRepository.findByEmail(email)
+                .map(existing -> {
+                    if (!existing.isGoogleLogin()) {
+                        throw new ResponseStatusException(HttpStatus.CONFLICT, "일반 로그인으로 가입된 이메일입니다.");
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> userRepository.save(new User(
+                        email,
+                        passwordEncoder.encode(UUID.randomUUID().toString()),
+                        name,
+                        AuthProvider.GOOGLE
+                )));
+        return issueTokens(user);
+    }
+
     public AuthResponse refresh(AuthRequest.Refresh request) {
         if (!jwtTokenProvider.isValid(request.refreshToken())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "유효하지 않은 Refresh Token입니다.");
@@ -63,6 +83,14 @@ public class AuthService {
         }
         String accessToken = jwtTokenProvider.create(user.getEmail(), "access", "ADMIN", 3600000);
         String refreshToken = jwtTokenProvider.create(user.getEmail(), "refresh", "ADMIN", 1209600000);
+        user.updateRefreshToken(refreshToken);
+        userRepository.save(user);
+        return new AuthResponse(accessToken, refreshToken);
+    }
+
+    private AuthResponse issueTokens(User user) {
+        String accessToken = jwtTokenProvider.create(user.getEmail(), "access", user.getRole().name(), 3600000);
+        String refreshToken = jwtTokenProvider.create(user.getEmail(), "refresh", user.getRole().name(), 1209600000);
         user.updateRefreshToken(refreshToken);
         userRepository.save(user);
         return new AuthResponse(accessToken, refreshToken);
