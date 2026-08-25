@@ -19,14 +19,18 @@ public class IeumApplication {
     CommandLineRunner seedAdminUser(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         return args -> userRepository.findByEmail("admin@ieum.com").ifPresentOrElse(
                 user -> {
+                    if (user.getLoginId() == null) {
+                        user.updateLoginId("admin");
+                    }
                     if (user.getRole() != UserRole.ADMIN) {
                         user.updateRole(UserRole.ADMIN);
-                        userRepository.save(user);
                     }
+                    userRepository.save(user);
                 },
                 () -> {
                     User admin = new User(
                             "admin@ieum.com",
+                            "admin",
                             passwordEncoder.encode("admin1234!"),
                             "ieum_admin"
                     );

@@ -26,14 +26,22 @@ public class AuthService {
         if (userRepository.existsByEmail(request.email())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 가입된 이메일입니다.");
         }
-        userRepository.save(new User(request.email(), passwordEncoder.encode(request.password()), request.name()));
+        if (userRepository.existsByLoginId(request.loginId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 사용 중인 아이디입니다.");
+        }
+        userRepository.save(new User(
+                request.email(),
+                request.loginId(),
+                passwordEncoder.encode(request.password()),
+                request.name()
+        ));
     }
 
     public AuthResponse login(AuthRequest.Login request) {
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."));
+        User user = userRepository.findByLoginId(request.loginId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."));
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다.");
         }
         String accessToken = jwtTokenProvider.create(user.getEmail(), "access", user.getRole().name(), 3600000);
         String refreshToken = jwtTokenProvider.create(user.getEmail(), "refresh", user.getRole().name(), 1209600000);
@@ -75,7 +83,7 @@ public class AuthService {
     }
 
     public AuthResponse adminLogin(AuthRequest.Login request) {
-        User user = userRepository.findByEmail(request.email())
+        User user = userRepository.findByLoginId(request.loginId())
                 .filter(candidate -> candidate.getRole() == UserRole.ADMIN)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "관리자 계정 정보가 올바르지 않습니다."));
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
