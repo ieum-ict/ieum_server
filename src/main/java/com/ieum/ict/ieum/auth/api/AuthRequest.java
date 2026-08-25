@@ -9,7 +9,7 @@ public final class AuthRequest {
     private AuthRequest() {}
     public record Signup(@NotBlank @Email String email,
                          @Schema(description = "회원가입 시 사용할 로그인 아이디")
-                         @NotBlank @Size(min = 4, max = 30) String loginId,
+                         @NotBlank @Size(min = 4, max = 30) String username,
                          @NotBlank @Size(min = 8) String password,
                          @NotBlank String name) {}
     public record Login(@Schema(description = "회원가입 시 등록한 로그인 아이디")
