@@ -3,13 +3,17 @@ package com.ieum.ict.ieum.auth.api;
 import com.ieum.ict.ieum.auth.service.AuthService;
 import com.ieum.ict.ieum.common.api.CommonResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Validated
 public class AuthController {
     private final AuthService authService;
 
@@ -18,6 +22,12 @@ public class AuthController {
     public CommonResponse<Void> signup(@Valid @RequestBody AuthRequest.Signup request) {
         authService.signup(request);
         return CommonResponse.ok(null);
+    }
+
+    @GetMapping("/username-availability")
+    public CommonResponse<UsernameAvailabilityResponse> checkUsernameAvailability(
+            @RequestParam @NotBlank @Size(min = 4, max = 30) String username) {
+        return CommonResponse.ok(new UsernameAvailabilityResponse(authService.isUsernameAvailable(username)));
     }
 
     @PostMapping("/login")

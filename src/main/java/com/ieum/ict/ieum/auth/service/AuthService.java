@@ -37,6 +37,10 @@ public class AuthService {
         ));
     }
 
+    public boolean isUsernameAvailable(String username) {
+        return !userRepository.existsByLoginId(username);
+    }
+
     public AuthResponse login(AuthRequest.Login request) {
         User user = userRepository.findByLoginId(request.username())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."));
