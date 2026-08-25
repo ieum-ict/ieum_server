@@ -38,7 +38,7 @@ public class AuthService {
     }
 
     public AuthResponse login(AuthRequest.Login request) {
-        User user = userRepository.findByLoginId(request.loginId())
+        User user = userRepository.findByLoginId(request.username())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."));
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다.");
@@ -83,7 +83,7 @@ public class AuthService {
     }
 
     public AuthResponse adminLogin(AuthRequest.Login request) {
-        User user = userRepository.findByLoginId(request.loginId())
+        User user = userRepository.findByLoginId(request.username())
                 .filter(candidate -> candidate.getRole() == UserRole.ADMIN)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "관리자 계정 정보가 올바르지 않습니다."));
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
