@@ -26,12 +26,12 @@ public class AuthService {
         if (userRepository.existsByEmail(request.email())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 가입된 이메일입니다.");
         }
-        if (userRepository.existsByLoginId(request.loginId())) {
+        if (userRepository.existsByLoginId(request.username())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 사용 중인 아이디입니다.");
         }
         userRepository.save(new User(
                 request.email(),
-                request.loginId(),
+                request.username(),
                 passwordEncoder.encode(request.password()),
                 request.name()
         ));
