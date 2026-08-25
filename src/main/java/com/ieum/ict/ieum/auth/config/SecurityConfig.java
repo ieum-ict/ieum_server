@@ -27,7 +27,7 @@ public class SecurityConfig {
     @org.springframework.context.annotation.Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**", "/oauth2/**", "/login/**", "/api/health", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/error", "/auth/**", "/oauth2/**", "/login/**", "/api/health", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN").anyRequest().authenticated());
 
         if (clientRegistrationRepository.getIfAvailable() != null) {
