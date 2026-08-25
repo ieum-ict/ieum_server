@@ -1,3 +1,3 @@
 package com.ieum.ict.ieum.user.api;
 
-public record UserResponse(Long id, String email, String name) {}
+public record UserResponse(Long id, String email, String loginId, String name) {}

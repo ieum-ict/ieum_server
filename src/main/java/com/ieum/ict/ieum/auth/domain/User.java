@@ -14,6 +14,8 @@ public class User {
     private Long id;
     @Column(nullable = false, unique = true)
     private String email;
+    @Column(unique = true)
+    private String loginId;
     @Column(nullable = false)
     private String password;
     @Column(nullable = false)
@@ -25,19 +27,21 @@ public class User {
     @Column(nullable = false)
     private UserRole role = UserRole.USER;
 
-    public User(String email, String password, String name) {
+    public User(String email, String loginId, String password, String name) {
         this.email = email;
+        this.loginId = loginId;
         this.password = password;
         this.name = name;
     }
 
     public User(String email, String password, String name, AuthProvider authProvider) {
-        this(email, password, name);
+        this(email, null, password, name);
         this.authProvider = authProvider;
     }
 
     public void updateRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
     public void clearRefreshToken() { this.refreshToken = null; }
     public void updateRole(UserRole role) { this.role = role; }
+    public void updateLoginId(String loginId) { this.loginId = loginId; }
     public boolean isGoogleLogin() { return authProvider == AuthProvider.GOOGLE; }
 }
