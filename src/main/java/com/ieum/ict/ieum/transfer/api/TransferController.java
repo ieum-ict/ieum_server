@@ -47,6 +47,12 @@ public class TransferController {
         return CommonResponse.ok(transferService.findStatus(authentication.getName(), transferId));
     }
 
+    @GetMapping("/{transferId}/progress")
+    public CommonResponse<TransferProgressResponse> findProgress(@PathVariable Long transferId,
+                                                                  Authentication authentication) {
+        return CommonResponse.ok(transferService.findProgress(authentication.getName(), transferId));
+    }
+
     @PatchMapping("/{transferId}/status")
     public CommonResponse<TransferResponse> updateStatus(@PathVariable Long transferId,
                                                           @Valid @RequestBody TransferRequest.StatusUpdate request,
