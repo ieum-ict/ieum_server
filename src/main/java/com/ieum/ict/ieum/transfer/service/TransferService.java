@@ -2,8 +2,11 @@ package com.ieum.ict.ieum.transfer.service;
 
 import com.ieum.ict.ieum.auth.domain.User;
 import com.ieum.ict.ieum.auth.repository.UserRepository;
+import com.ieum.ict.ieum.request.domain.AcceptanceRequestStatus;
+import com.ieum.ict.ieum.request.repository.AcceptanceRequestRepository;
 import com.ieum.ict.ieum.transfer.api.TransferRequest;
 import com.ieum.ict.ieum.transfer.api.TransferResponse;
+import com.ieum.ict.ieum.transfer.api.TransferProgressResponse;
 import com.ieum.ict.ieum.transfer.domain.Transfer;
 import com.ieum.ict.ieum.transfer.domain.TransferStatus;
 import com.ieum.ict.ieum.transfer.domain.TransferStatusHistory;
@@ -27,6 +30,7 @@ public class TransferService {
     private final TransferRepository transferRepository;
     private final TransferStatusHistoryRepository historyRepository;
     private final TransferRecordRepository recordRepository;
+    private final AcceptanceRequestRepository acceptanceRequestRepository;
 
     @Transactional
     public TransferResponse create(String email, TransferRequest.Create request) {
@@ -73,6 +77,17 @@ public class TransferService {
     @Transactional(readOnly = true)
     public TransferStatus findStatus(String email, Long transferId) {
         return getOwnedTransfer(email, transferId).getStatus();
+    }
+
+    @Transactional(readOnly = true)
+    public TransferProgressResponse findProgress(String email, Long transferId) {
+        Transfer transfer = getOwnedTransfer(email, transferId);
+        long pendingResponseCount = acceptanceRequestRepository.countByTransferAndStatus(
+                transfer, AcceptanceRequestStatus.REQUESTED);
+        List<TransferHistoryResponse> history = historyRepository.findAllByTransferOrderByChangedAtAsc(transfer).stream()
+                .map(TransferHistoryResponse::from)
+                .toList();
+        return new TransferProgressResponse(transfer.getStatus(), pendingResponseCount, history);
     }
 
     @Transactional
