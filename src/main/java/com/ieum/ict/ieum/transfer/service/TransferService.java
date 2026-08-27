@@ -2,8 +2,13 @@ package com.ieum.ict.ieum.transfer.service;
 
 import com.ieum.ict.ieum.auth.domain.User;
 import com.ieum.ict.ieum.auth.repository.UserRepository;
+import com.ieum.ict.ieum.request.domain.AcceptanceRequest;
+import com.ieum.ict.ieum.request.domain.AcceptanceRequestStatus;
+import com.ieum.ict.ieum.request.repository.AcceptanceRequestRepository;
 import com.ieum.ict.ieum.transfer.api.TransferRequest;
 import com.ieum.ict.ieum.transfer.api.TransferResponse;
+import com.ieum.ict.ieum.transfer.api.TransferProgressResponse;
+import com.ieum.ict.ieum.transfer.api.TransferProgressStage;
 import com.ieum.ict.ieum.transfer.domain.Transfer;
 import com.ieum.ict.ieum.transfer.domain.TransferStatus;
 import com.ieum.ict.ieum.transfer.domain.TransferStatusHistory;
@@ -13,8 +18,10 @@ import com.ieum.ict.ieum.transfer.domain.TransferRecord;
 import com.ieum.ict.ieum.transfer.api.TransferRecordResponse;
 import com.ieum.ict.ieum.transfer.repository.TransferRecordRepository;
 import com.ieum.ict.ieum.transfer.repository.TransferRepository;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +34,7 @@ public class TransferService {
     private final TransferRepository transferRepository;
     private final TransferStatusHistoryRepository historyRepository;
     private final TransferRecordRepository recordRepository;
+    private final AcceptanceRequestRepository acceptanceRequestRepository;
 
     @Transactional
     public TransferResponse create(String email, TransferRequest.Create request) {
@@ -73,6 +81,91 @@ public class TransferService {
     @Transactional(readOnly = true)
     public TransferStatus findStatus(String email, Long transferId) {
         return getOwnedTransfer(email, transferId).getStatus();
+    }
+
+    @Transactional(readOnly = true)
+    public TransferProgressResponse findProgress(String email, Long transferId) {
+        Transfer transfer = getOwnedTransfer(email, transferId);
+        List<AcceptanceRequest> acceptanceRequests = acceptanceRequestRepository
+                .findAllByTransferOrderByCreatedAtAsc(transfer);
+        List<TransferStatusHistory> statusHistory = historyRepository.findAllByTransferOrderByChangedAtAsc(transfer);
+        long pendingResponseCount = acceptanceRequestRepository.countByTransferAndStatus(
+                transfer, AcceptanceRequestStatus.REQUESTED);
+
+        LocalDateTime analysisCompletedAt = firstRecordCreatedAt(transfer, "PATIENT_APPLIED");
+        LocalDateTime hospitalSearchCompletedAt = firstRecordCreatedAt(transfer, "RECOMMENDATION");
+        LocalDateTime acceptanceRequestSentAt = acceptanceRequests.stream()
+                .map(AcceptanceRequest::getCreatedAt)
+                .findFirst()
+                .orElse(null);
+        LocalDateTime hospitalConfirmedAt = acceptanceRequests.stream()
+                .filter(request -> request.getStatus() == AcceptanceRequestStatus.ACCEPTED)
+                .map(AcceptanceRequest::getRespondedAt)
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        LocalDateTime transferStartedAt = firstStatusChangedAt(statusHistory, TransferStatus.IN_PROGRESS);
+        LocalDateTime handoverCompletedAt = firstStatusChangedAt(statusHistory, TransferStatus.HANDED_OVER);
+        TransferProgressStage currentStage = resolveCurrentStage(transfer.getStatus(), analysisCompletedAt,
+                hospitalSearchCompletedAt, acceptanceRequestSentAt, hospitalConfirmedAt);
+
+        return new TransferProgressResponse(transfer.getStatus(), currentStage, pendingResponseCount, List.of(
+                stage(TransferProgressStage.REQUEST_RECEIVED, transfer.getCreatedAt(), currentStage),
+                stage(TransferProgressStage.ANALYSIS_COMPLETED, analysisCompletedAt, currentStage),
+                stage(TransferProgressStage.HOSPITAL_SEARCH_COMPLETED, hospitalSearchCompletedAt, currentStage),
+                stage(TransferProgressStage.ACCEPTANCE_REQUEST_SENT, acceptanceRequestSentAt, currentStage),
+                stage(TransferProgressStage.HOSPITAL_RESPONSE_WAITING, hospitalConfirmedAt, currentStage),
+                stage(TransferProgressStage.HOSPITAL_CONFIRMED, hospitalConfirmedAt, currentStage),
+                stage(TransferProgressStage.TRANSFER_STARTED, transferStartedAt, currentStage),
+                stage(TransferProgressStage.HANDOVER_COMPLETED, handoverCompletedAt, currentStage)
+        ));
+    }
+
+    private LocalDateTime firstRecordCreatedAt(Transfer transfer, String type) {
+        return recordRepository.findFirstByTransferAndTypeOrderByCreatedAtAsc(transfer, type)
+                .map(TransferRecord::getCreatedAt)
+                .orElse(null);
+    }
+
+    private LocalDateTime firstStatusChangedAt(List<TransferStatusHistory> history, TransferStatus status) {
+        return history.stream()
+                .filter(item -> item.getStatus() == status)
+                .map(TransferStatusHistory::getChangedAt)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private TransferProgressStage resolveCurrentStage(TransferStatus status, LocalDateTime analysisCompletedAt,
+                                                       LocalDateTime hospitalSearchCompletedAt,
+                                                       LocalDateTime acceptanceRequestSentAt,
+                                                       LocalDateTime hospitalConfirmedAt) {
+        if (status == TransferStatus.CANCELLED) {
+            return TransferProgressStage.CANCELLED;
+        }
+        if (status == TransferStatus.HANDED_OVER) {
+            return TransferProgressStage.HANDOVER_COMPLETED;
+        }
+        if (status == TransferStatus.IN_PROGRESS || status == TransferStatus.ARRIVED) {
+            return TransferProgressStage.TRANSFER_STARTED;
+        }
+        if (hospitalConfirmedAt != null) {
+            return TransferProgressStage.HOSPITAL_CONFIRMED;
+        }
+        if (acceptanceRequestSentAt != null) {
+            return TransferProgressStage.HOSPITAL_RESPONSE_WAITING;
+        }
+        if (hospitalSearchCompletedAt != null) {
+            return TransferProgressStage.ACCEPTANCE_REQUEST_SENT;
+        }
+        if (analysisCompletedAt != null) {
+            return TransferProgressStage.HOSPITAL_SEARCH_COMPLETED;
+        }
+        return TransferProgressStage.ANALYSIS_COMPLETED;
+    }
+
+    private TransferProgressResponse.Stage stage(TransferProgressStage stage, LocalDateTime completedAt,
+                                                  TransferProgressStage currentStage) {
+        return new TransferProgressResponse.Stage(stage, completedAt, stage == currentStage);
     }
 
     @Transactional

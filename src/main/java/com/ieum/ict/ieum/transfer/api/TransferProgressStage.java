@@ -1,0 +1,13 @@
+package com.ieum.ict.ieum.transfer.api;
+
+public enum TransferProgressStage {
+    REQUEST_RECEIVED,
+    ANALYSIS_COMPLETED,
+    HOSPITAL_SEARCH_COMPLETED,
+    ACCEPTANCE_REQUEST_SENT,
+    HOSPITAL_RESPONSE_WAITING,
+    HOSPITAL_CONFIRMED,
+    TRANSFER_STARTED,
+    HANDOVER_COMPLETED,
+    CANCELLED
+}
