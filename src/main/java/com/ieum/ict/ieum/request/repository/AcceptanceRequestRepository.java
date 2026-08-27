@@ -9,5 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface AcceptanceRequestRepository extends JpaRepository<AcceptanceRequest, Long> {
     List<AcceptanceRequest> findAllByRequesterEmailOrderByCreatedAtDesc(String email);
     List<AcceptanceRequest> findAllByTransferAndRequesterEmailOrderByCreatedAtDesc(Transfer transfer, String email);
+    List<AcceptanceRequest> findAllByTransferOrderByCreatedAtAsc(Transfer transfer);
     long countByTransferAndStatus(Transfer transfer, AcceptanceRequestStatus status);
 }
